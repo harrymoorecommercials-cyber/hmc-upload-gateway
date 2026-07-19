@@ -31,7 +31,7 @@
         <!-- Step 2: Employee Verification -->
         <div id="step2" class="hidden">
             <div class="info" id="jobDetails"></div>
-            <input type="text" id="empNum" placeholder="Enter Employee Number">
+            <input type="text" id="empNum" placeholder="Employee Number (e.g. 000)">
             <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
             <div id="empNameDisplay"></div>
         </div>
@@ -46,7 +46,7 @@
     </div>
 
     <script>
-        const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0";
+        const flowUrl = "YOUR_POWER_AUTOMATE_HTTP_POST_URL";
 
         function toggleLoader(show) {
             document.getElementById('loader').style.display = show ? "block" : "none";
@@ -75,8 +75,11 @@
         }
 
         async function verifyEmployee() {
-            const empNum = document.getElementById('empNum').value;
-            if (!empNum) { alert("Please enter employee number"); return; }
+            // Force 3-digit format (e.g., 27 becomes 027)
+            const rawEmpNum = document.getElementById('empNum').value;
+            const empNum = rawEmpNum.padStart(3, '0');
+            
+            if (!rawEmpNum) { alert("Please enter employee number"); return; }
 
             toggleLoader(true);
             try {
@@ -104,7 +107,7 @@
             
             const btn = document.getElementById('uploadBtn');
             const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
-            const empNum = document.getElementById('empNum').value;
+            const empNum = document.getElementById('empNum').value.padStart(3, '0');
 
             btn.disabled = true;
             btn.innerText = "Uploading...";

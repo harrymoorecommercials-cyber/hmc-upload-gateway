@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HMC Workshop Photo Portal</title>
+    <title>HMC Workshop Portal</title>
     <style>
         :root { --primary: #0078d4; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; justify-content: center; }
@@ -19,31 +19,39 @@
 </head>
 <body>
     <div class="card">
-        <h2>📷 HMC Workshop Photo Upload</h2>
-        <input type="text" id="jobNum" placeholder="Enter Job Number...">
-        <button id="verifyBtn" onclick="verifyJob()">Verify Job</button>
-        <div id="loader" class="loader">Searching for job...</div>
+        <h2>📷 HMC Workshop Upload</h2>
+        <!-- Job Number with pattern enforcement: 2 letters followed by 6 numbers -->
+        <input type="text" id="jobNum" placeholder="Job Number (e.g., AC123456)" pattern="[A-Za-z]{2}[0-9]{6}" required>
+        <input type="text" id="empNum" placeholder="Employee Number">
+        <button id="verifyBtn" onclick="verifyJob()">Verify & Confirm</button>
+        <div id="loader" class="loader">Validating...</div>
 
         <div id="confirmSection">
             <div class="info">
                 <strong>Vehicle:</strong> <span id="regDisplay"></span><br>
                 <strong>Job:</strong> <span id="descDisplay"></span>
             </div>
-            <!-- REMOVED capture="environment" to allow Gallery access -->
             <input type="file" id="photo" accept="image/*" multiple>
             <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
         </div>
     </div>
 
     <script>
-        const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0"; 
+        const flowUrl = "YOUR_POWER_AUTOMATE_HTTP_POST_URL"; 
         
         async function verifyJob() {
-            const jobNum = document.getElementById('jobNum').value;
+            const jobNum = document.getElementById('jobNum').value.toUpperCase();
+            const empNum = document.getElementById('empNum').value;
+            
+            // Regex to match 2 letters followed by 6 digits
+            if (!/^[A-Za-z]{2}[0-9]{6}$/.test(jobNum)) {
+                alert("Please enter a valid Job Number format (e.g., AC123456)");
+                return;
+            }
+            if (!empNum) { alert("Please enter your Employee Number"); return; }
+
             const btn = document.getElementById('verifyBtn');
             const loader = document.getElementById('loader');
-
-            if (!jobNum) { alert("Please enter a job number"); return; }
 
             btn.disabled = true;
             loader.style.display = "block";
@@ -62,10 +70,10 @@
                     document.getElementById('confirmSection').style.display = "block";
                     btn.style.display = "none";
                 } else {
-                    alert("Job not found!");
+                    alert("Job not found! Check the prefix.");
                 }
             } catch (err) {
-                alert("Connection error. Please try again.");
+                alert("Connection error.");
             } finally {
                 btn.disabled = false;
                 loader.style.display = "none";
@@ -77,6 +85,9 @@
             if (files.length === 0) { alert("Please select photos"); return; }
             
             const btn = document.getElementById('uploadBtn');
+            const jobNum = document.getElementById('jobNum').value.toUpperCase();
+            const empNum = document.getElementById('empNum').value;
+
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
@@ -91,7 +102,8 @@
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ 
                                     action: "upload", 
-                                    jobNum: document.getElementById('jobNum').value, 
+                                    jobNum: jobNum,
+                                    empNum: empNum, // Passed to flow for file naming
                                     fileName: file.name, 
                                     fileContent: reader.result.split(',')[1] 
                                 }) 
@@ -104,10 +116,10 @@
 
             try {
                 await Promise.all(uploadPromises);
-                alert("Success! Photos uploaded.");
+                alert("Success! Uploaded by " + empNum);
                 location.reload();
             } catch (err) {
-                alert("Upload failed. Please check connection.");
+                alert("Upload failed.");
                 btn.disabled = false;
                 btn.innerText = "Upload Photos";
             }

@@ -29,7 +29,8 @@
                 <strong>Vehicle:</strong> <span id="regDisplay"></span><br>
                 <strong>Job:</strong> <span id="descDisplay"></span>
             </div>
-            <input type="file" id="photo" accept="image/*" capture="environment" multiple>
+            <!-- REMOVED capture="environment" to allow Gallery access -->
+            <input type="file" id="photo" accept="image/*" multiple>
             <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
         </div>
     </div>
@@ -44,7 +45,6 @@
 
             if (!jobNum) { alert("Please enter a job number"); return; }
 
-            // Visual feedback: Disable button and show loader
             btn.disabled = true;
             loader.style.display = "block";
 
@@ -62,7 +62,7 @@
                     document.getElementById('confirmSection').style.display = "block";
                     btn.style.display = "none";
                 } else {
-                    alert("Job not found! Please check the number.");
+                    alert("Job not found!");
                 }
             } catch (err) {
                 alert("Connection error. Please try again.");
@@ -80,19 +80,37 @@
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
-            for (let i = 0; i < files.length; i++) {
-                const reader = new FileReader();
-                reader.readAsDataURL(files[i]);
-                reader.onload = async () => {
-                    await fetch(flowUrl, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "upload", jobNum: document.getElementById('jobNum').value, fileName: files[i].name, fileContent: reader.result.split(',')[1] }) 
-                    });
-                };
+            const uploadPromises = Array.from(files).map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = async () => {
+                        try {
+                            const response = await fetch(flowUrl, { 
+                                method: "POST", 
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ 
+                                    action: "upload", 
+                                    jobNum: document.getElementById('jobNum').value, 
+                                    fileName: file.name, 
+                                    fileContent: reader.result.split(',')[1] 
+                                }) 
+                            });
+                            resolve(response);
+                        } catch (err) { reject(err); }
+                    };
+                });
+            });
+
+            try {
+                await Promise.all(uploadPromises);
+                alert("Success! Photos uploaded.");
+                location.reload();
+            } catch (err) {
+                alert("Upload failed. Please check connection.");
+                btn.disabled = false;
+                btn.innerText = "Upload Photos";
             }
-            alert("Success! Photos uploaded.");
-            location.reload();
         }
     </script>
 </body>

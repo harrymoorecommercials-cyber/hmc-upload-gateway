@@ -15,7 +15,7 @@
         .hidden { display: none; }
         .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
-        #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; }
+        #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -75,7 +75,6 @@
         }
 
         async function verifyEmployee() {
-            // Force 3-digit format (e.g., 27 becomes 027)
             const rawEmpNum = document.getElementById('empNum').value;
             const empNum = rawEmpNum.padStart(3, '0');
             
@@ -92,10 +91,11 @@
 
                 if (data.status === "valid") {
                     document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
-                    setTimeout(() => {
-                        document.getElementById('step2').classList.add('hidden');
-                        document.getElementById('step3').classList.remove('hidden');
-                    }, 1500);
+                    // Hide only the input and button, keep the info div and name display
+                    document.getElementById('empNum').classList.add('hidden');
+                    document.getElementById('verifyEmpBtn').classList.add('hidden');
+                    // Show upload section
+                    document.getElementById('step3').classList.remove('hidden');
                 } else { alert("Invalid Employee Number!"); }
             } catch (err) { alert("Connection error."); }
             toggleLoader(false);

@@ -15,6 +15,7 @@
         .hidden { display: none; }
         .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
+        #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; }
     </style>
 </head>
 <body>
@@ -32,6 +33,7 @@
             <div class="info" id="jobDetails"></div>
             <input type="text" id="empNum" placeholder="Enter Employee Number">
             <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
+            <div id="empNameDisplay"></div>
         </div>
 
         <!-- Step 3: Photo Upload -->
@@ -45,6 +47,10 @@
 
     <script>
         const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0";
+
+        function toggleLoader(show) {
+            document.getElementById('loader').style.display = show ? "block" : "none";
+        }
 
         async function verifyJob() {
             const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
@@ -82,8 +88,11 @@
                 const data = await res.json();
 
                 if (data.status === "valid") {
-                    document.getElementById('step2').classList.add('hidden');
-                    document.getElementById('step3').classList.remove('hidden');
+                    document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
+                    setTimeout(() => {
+                        document.getElementById('step2').classList.add('hidden');
+                        document.getElementById('step3').classList.remove('hidden');
+                    }, 1500);
                 } else { alert("Invalid Employee Number!"); }
             } catch (err) { alert("Connection error."); }
             toggleLoader(false);
@@ -132,10 +141,6 @@
                 btn.disabled = false;
                 btn.innerText = "Upload Photos";
             }
-        }
-
-        function toggleLoader(show) {
-            document.getElementById('loader').style.display = show ? "block" : "none";
         }
     </script>
 </body>

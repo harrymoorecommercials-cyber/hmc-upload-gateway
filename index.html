@@ -12,67 +12,81 @@
         input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #e1e1e1; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         button:disabled { background: #ccc; cursor: not-allowed; }
-        #confirmSection { margin-top: 20px; padding-top: 20px; border-top: 2px solid #f0f0f0; display: none; }
-        .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; }
+        .hidden { display: none; }
+        .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>📷 HMC Workshop Upload</h2>
-        <input type="text" id="jobNum" placeholder="Enter Job Number: (e.g. AC123456)" pattern="[A-Za-z]{2}[0-9]{6}" required>
-        <input type="text" id="empNum" placeholder="Employee Number">
-        <button id="verifyBtn" onclick="verifyJob()">Verify & Confirm</button>
-        <div id="loader" class="loader">Validating...</div>
+        
+        <!-- Step 1: Job Verification -->
+        <div id="step1">
+            <input type="text" id="jobNum" placeholder="Enter Job Number: (e.g. AC123456)">
+            <button id="verifyJobBtn" onclick="verifyJob()">Verify Job</button>
+        </div>
 
-        <div id="confirmSection">
-            <div class="info">
-                <strong>Vehicle:</strong> <span id="regDisplay"></span><br>
-                <strong>Job:</strong> <span id="descDisplay"></span>
-            </div>
+        <!-- Step 2: Employee Verification -->
+        <div id="step2" class="hidden">
+            <div class="info" id="jobDetails"></div>
+            <input type="text" id="empNum" placeholder="Enter Employee Number">
+            <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
+        </div>
+
+        <!-- Step 3: Photo Upload -->
+        <div id="step3" class="hidden">
             <input type="file" id="photo" accept="image/*" multiple>
             <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
         </div>
+        
+        <div id="loader" class="loader">Processing...</div>
     </div>
 
     <script>
-        const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0"; 
-        
+        const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0";
+
         async function verifyJob() {
-            const jobNum = document.getElementById('jobNum').value.toUpperCase();
-            const empNum = document.getElementById('empNum').value;
-            const btn = document.getElementById('verifyBtn');
-            const loader = document.getElementById('loader');
-
+            const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
             if (!jobNum) { alert("Please enter a job number"); return; }
-            if (!empNum) { alert("Please enter your Employee Number"); return; }
-            if (!/^[A-Za-z]{2}[0-9]{6}$/.test(jobNum)) { alert("Invalid format. Use 2 letters + 6 digits."); return; }
 
-            btn.disabled = true;
-            loader.style.display = "block";
-
+            toggleLoader(true);
             try {
                 const res = await fetch(flowUrl, { 
                     method: "POST", 
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "empverify", jobNum: jobNum, empNum: empNum }) 
+                    headers: {"Content-Type":"application/json"}, 
+                    body: JSON.stringify({action: "verify", jobNum: jobNum}) 
                 });
                 const data = await res.json();
                 
                 if (data.status === "found") {
-                    document.getElementById('regDisplay').innerText = data.registration;
-                    document.getElementById('descDisplay').innerText = data.description;
-                    document.getElementById('confirmSection').style.display = "block";
-                    btn.style.display = "none";
-                } else {
-                    alert("Job not found or Employee ID invalid!");
-                }
-            } catch (err) {
-                alert("Connection error.");
-            } finally {
-                btn.disabled = false;
-                loader.style.display = "none";
-            }
+                    document.getElementById('jobDetails').innerHTML = `<strong>Vehicle:</strong> ${data.registration}<br><strong>Job:</strong> ${data.description}`;
+                    document.getElementById('step1').classList.add('hidden');
+                    document.getElementById('step2').classList.remove('hidden');
+                } else { alert("Job not found!"); }
+            } catch (err) { alert("Connection error."); }
+            toggleLoader(false);
+        }
+
+        async function verifyEmployee() {
+            const empNum = document.getElementById('empNum').value;
+            if (!empNum) { alert("Please enter employee number"); return; }
+
+            toggleLoader(true);
+            try {
+                const res = await fetch(flowUrl, { 
+                    method: "POST", 
+                    headers: {"Content-Type":"application/json"}, 
+                    body: JSON.stringify({action: "empverify", empNum: empNum}) 
+                });
+                const data = await res.json();
+
+                if (data.status === "valid") {
+                    document.getElementById('step2').classList.add('hidden');
+                    document.getElementById('step3').classList.remove('hidden');
+                } else { alert("Invalid Employee Number!"); }
+            } catch (err) { alert("Connection error."); }
+            toggleLoader(false);
         }
 
         async function uploadPhotos() {
@@ -80,7 +94,7 @@
             if (files.length === 0) { alert("Please select photos"); return; }
             
             const btn = document.getElementById('uploadBtn');
-            const jobNum = document.getElementById('jobNum').value.toUpperCase();
+            const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
             const empNum = document.getElementById('empNum').value;
 
             btn.disabled = true;
@@ -111,13 +125,17 @@
 
             try {
                 await Promise.all(uploadPromises);
-                alert("Success! Uploaded by " + empNum);
+                alert("Success! Photos uploaded.");
                 location.reload();
             } catch (err) {
                 alert("Upload failed.");
                 btn.disabled = false;
                 btn.innerText = "Upload Photos";
             }
+        }
+
+        function toggleLoader(show) {
+            document.getElementById('loader').style.display = show ? "block" : "none";
         }
     </script>
 </body>

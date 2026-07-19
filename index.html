@@ -1,129 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HMC Workshop Portal</title>
-    <style>
-        :root { --primary: #0078d4; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; justify-content: center; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { color: #333; margin-top: 0; }
-        input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #e1e1e1; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #confirmSection { margin-top: 20px; padding-top: 20px; border-top: 2px solid #f0f0f0; display: none; }
-        .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; }
-        .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>📷 HMC Workshop Upload</h2>
-        <!-- Job Number with pattern enforcement: 2 letters followed by 6 numbers -->
-        <input type="text" id="jobNum" placeholder="Job Number (e.g., AC123456)" pattern="[A-Za-z]{2}[0-9]{6}" required>
-        <input type="text" id="empNum" placeholder="Employee Number">
-        <button id="verifyBtn" onclick="verifyJob()">Verify & Confirm</button>
-        <div id="loader" class="loader">Validating...</div>
+async function verifyJob() {
+    const jobNum = document.getElementById('jobNum').value.toUpperCase();
+    const empNum = document.getElementById('empNum').value;
+    const btn = document.getElementById('verifyBtn');
+    const loader = document.getElementById('loader');
 
-        <div id="confirmSection">
-            <div class="info">
-                <strong>Vehicle:</strong> <span id="regDisplay"></span><br>
-                <strong>Job:</strong> <span id="descDisplay"></span>
-            </div>
-            <input type="file" id="photo" accept="image/*" multiple>
-            <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
-        </div>
-    </div>
+    if (!jobNum) { alert("Please enter a job number"); return; }
+    if (!empNum) { alert("Please enter your Employee Number"); return; }
 
-    <script>
-        const flowUrl = "YOUR_POWER_AUTOMATE_HTTP_POST_URL"; 
+    btn.disabled = true;
+    loader.style.display = "block";
+
+    try {
+        const res = await fetch(flowUrl, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
+            // Action is now 'empverify'
+            body: JSON.stringify({ action: "empverify", jobNum: jobNum, empNum: empNum }) 
+        });
+        const data = await res.json();
         
-        async function verifyJob() {
-            const jobNum = document.getElementById('jobNum').value.toUpperCase();
-            const empNum = document.getElementById('empNum').value;
-            
-            // Regex to match 2 letters followed by 6 digits
-            if (!/^[A-Za-z]{2}[0-9]{6}$/.test(jobNum)) {
-                alert("Please enter a valid Job Number format (e.g., AC123456)");
-                return;
-            }
-            if (!empNum) { alert("Please enter your Employee Number"); return; }
-
-            const btn = document.getElementById('verifyBtn');
-            const loader = document.getElementById('loader');
-
-            btn.disabled = true;
-            loader.style.display = "block";
-
-            try {
-                const res = await fetch(flowUrl, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "verify", jobNum: jobNum }) 
-                });
-                const data = await res.json();
-                
-                if (data.status === "found") {
-                    document.getElementById('regDisplay').innerText = data.registration;
-                    document.getElementById('descDisplay').innerText = data.description;
-                    document.getElementById('confirmSection').style.display = "block";
-                    btn.style.display = "none";
-                } else {
-                    alert("Job not found! Check the prefix.");
-                }
-            } catch (err) {
-                alert("Connection error.");
-            } finally {
-                btn.disabled = false;
-                loader.style.display = "none";
-            }
+        if (data.status === "found") {
+            document.getElementById('regDisplay').innerText = data.registration;
+            document.getElementById('descDisplay').innerText = data.description;
+            document.getElementById('confirmSection').style.display = "block";
+            btn.style.display = "none";
+        } else {
+            alert("Job not found or Employee ID invalid!");
         }
-
-        async function uploadPhotos() {
-            const files = document.getElementById('photo').files;
-            if (files.length === 0) { alert("Please select photos"); return; }
-            
-            const btn = document.getElementById('uploadBtn');
-            const jobNum = document.getElementById('jobNum').value.toUpperCase();
-            const empNum = document.getElementById('empNum').value;
-
-            btn.disabled = true;
-            btn.innerText = "Uploading...";
-            
-            const uploadPromises = Array.from(files).map(file => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = async () => {
-                        try {
-                            const response = await fetch(flowUrl, { 
-                                method: "POST", 
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ 
-                                    action: "upload", 
-                                    jobNum: jobNum,
-                                    empNum: empNum, // Passed to flow for file naming
-                                    fileName: file.name, 
-                                    fileContent: reader.result.split(',')[1] 
-                                }) 
-                            });
-                            resolve(response);
-                        } catch (err) { reject(err); }
-                    };
-                });
-            });
-
-            try {
-                await Promise.all(uploadPromises);
-                alert("Success! Uploaded by " + empNum);
-                location.reload();
-            } catch (err) {
-                alert("Upload failed.");
-                btn.disabled = false;
-                btn.innerText = "Upload Photos";
-            }
-        }
-    </script>
-</body>
-</html>
+    } catch (err) {
+        alert("Connection error.");
+    } finally {
+        btn.disabled = false;
+        loader.style.display = "none";
+    }
+}

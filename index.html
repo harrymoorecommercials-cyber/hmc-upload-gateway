@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMC Upload</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: auto; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        #confirmSection { border: 2px solid #0078d4; padding: 15px; border-radius: 5px; margin-top: 20px; display: none; }
+        button { background: #0078d4; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Technician Upload</h2>
+    <input type="text" id="jobNum" placeholder="Enter Job Number">
+    <button id="verifyBtn" onclick="verifyJob()">Verify Job</button>
+
+    <div id="confirmSection">
+        <p><strong>Reg:</strong> <span id="regDisplay"></span></p>
+        <p><strong>Desc:</strong> <span id="descDisplay"></span></p>
+        <input type="file" id="photo" capture="environment" multiple>
+        <button onclick="uploadPhotos()">Upload Photos</button>
+    </div>
+
+    <script>
+        const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0"; 
+        
+        async function verifyJob() {
+            const jobNum = document.getElementById('jobNum').value;
+            const res = await fetch(flowUrl, { method: "POST", body: JSON.stringify({ action: "verify", jobNum: jobNum }) });
+            const data = await res.json();
+            if (data.status === "found") {
+                document.getElementById('regDisplay').innerText = data.registration;
+                document.getElementById('descDisplay').innerText = data.description;
+                document.getElementById('confirmSection').style.display = "block";
+            } else { alert("Job not found!"); }
+        }
+
+        async function uploadPhotos() {
+            const files = document.getElementById('photo').files;
+            const jobNum = document.getElementById('jobNum').value;
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.readAsDataURL(files[i]);
+                reader.onload = async () => {
+                    await fetch(flowUrl, { method: "POST", body: JSON.stringify({ action: "upload", jobNum: jobNum, fileName: files[i].name, fileContent: reader.result.split(',')[1] }) });
+                };
+            }
+            alert("Upload complete!");
+        }
+    </script>
+</body>
+</html>

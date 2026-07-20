@@ -115,11 +115,12 @@
             const btn = document.getElementById('uploadBtn');
             const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
             const empNum = document.getElementById('empNum').value.padStart(3, '0');
+            const allFileNames = Array.from(files).map(file => file.name);
 
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
-            const uploadPromises = Array.from(files).map((file, index) => {
+            const uploadPromises = Array.from(files).map((file) => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
@@ -134,7 +135,7 @@
                                     empNum: empNum,
                                     fileName: file.name, 
                                     fileContent: reader.result.split(',')[1],
-                                    isLast: (index === files.length - 1)
+                                    isLast: false
                                 }) 
                             });
                             resolve(response);
@@ -145,7 +146,20 @@
 
             try {
                 await Promise.all(uploadPromises);
-                alert("Success! Photos uploaded.");
+
+                await fetch(flowUrl, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        action: "upload", 
+                        jobNum: jobNum,
+                        empNum: empNum,
+                        allFileNames: allFileNames,
+                        isLast: true 
+                    }) 
+                });
+
+                alert("Success! All photos uploaded.");
                 location.reload();
             } catch (err) {
                 alert("Upload failed.");

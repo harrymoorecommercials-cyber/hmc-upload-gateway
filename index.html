@@ -16,6 +16,8 @@
         .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
         #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; margin-bottom: 15px; }
+        /* Added for the help link */
+        #help-link { margin-bottom: 15px; font-size: 0.9em; text-align: center; }
     </style>
 </head>
 <body>
@@ -31,6 +33,14 @@
         <!-- Step 2: Employee Verification -->
         <div id="step2" class="hidden">
             <div class="info" id="jobDetails"></div>
+            
+            <!-- Help Link -->
+            <div id="help-link">
+                <a href="https://your-internal-link-to-employee-lookup" target="_blank" rel="noopener noreferrer">
+                    Don't know your employee number? Click here
+                </a>
+            </div>
+
             <input type="text" id="empNum" placeholder="Employee Number (e.g. 000)">
             <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
             <div id="empNameDisplay"></div>
@@ -91,10 +101,12 @@
 
                 if (data.status === "valid") {
                     document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
-                    // Hide only the input and button, keep the info div and name display
+                    
+                    // Hide help link, input, and button
+                    document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
                     document.getElementById('verifyEmpBtn').classList.add('hidden');
-                    // Show upload section
+                    
                     document.getElementById('step3').classList.remove('hidden');
                 } else { alert("Invalid Employee Number!"); }
             } catch (err) { alert("Connection error."); }
@@ -102,6 +114,7 @@
         }
 
         async function uploadPhotos() {
+            // ... (keep your existing upload logic)
             const files = document.getElementById('photo').files;
             if (files.length === 0) { alert("Please select photos"); return; }
             

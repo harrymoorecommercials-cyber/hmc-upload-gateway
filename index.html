@@ -13,17 +13,22 @@
         button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         .hidden { display: none; }
-        .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
+        .info { background: #eef6fc; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
         #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; margin-bottom: 15px; }
-        /* Added for the help link */
-        #help-link { margin-bottom: 15px; font-size: 0.9em; text-align: center; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>📷 HMC Workshop Upload</h2>
         
+        <!-- Persistent Job Header -->
+        <div id="jobHeader" class="info hidden">
+            <strong>Job Number:</strong> <span id="jobNumDisplay"></span><br>
+            <strong>Vehicle Reg:</strong> <span id="regDisplay"></span><br>
+            <strong>Job Description:</strong> <span id="descDisplay"></span>
+        </div>
+
         <!-- Step 1: Job Verification -->
         <div id="step1">
             <input type="text" id="jobNum" placeholder="Enter Job Number: (e.g. AC123456)">
@@ -32,15 +37,6 @@
 
         <!-- Step 2: Employee Verification -->
         <div id="step2" class="hidden">
-            <div class="info" id="jobDetails"></div>
-            
-            <!-- Help Link -->
-            <div id="help-link">
-                <a href="https://harrymooregroup.sharepoint.com/:x:/s/HarryMooreCommercials64/IQBtXq35iBSYQorQee_QmawXAew1CDPy3N_vz_vDke5yBzY?e=6BqOmi" target="_blank" rel="noopener noreferrer">
-                    Don't know your employee number? Click here
-                </a>
-            </div>
-
             <input type="text" id="empNum" placeholder="Employee Number (e.g. 000)">
             <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
             <div id="empNameDisplay"></div>
@@ -63,7 +59,8 @@
         }
 
         async function verifyJob() {
-            const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
+            const rawJobNum = document.getElementById('jobNum').value;
+            const jobNum = rawJobNum.toUpperCase().replace(/\s/g, '');
             if (!jobNum) { alert("Please enter a job number"); return; }
 
             toggleLoader(true);
@@ -76,7 +73,12 @@
                 const data = await res.json();
                 
                 if (data.status === "found") {
-                    document.getElementById('jobDetails').innerHTML = `<strong>Vehicle:</strong> ${data.registration}<br><strong>Job:</strong> ${data.description}`;
+                    // Populate header and make it visible
+                    document.getElementById('jobNumDisplay').innerText = jobNum;
+                    document.getElementById('regDisplay').innerText = data.registration;
+                    document.getElementById('descDisplay').innerText = data.description;
+                    document.getElementById('jobHeader').classList.remove('hidden');
+                    
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.remove('hidden');
                 } else { alert("Job not found!"); }
@@ -101,12 +103,8 @@
 
                 if (data.status === "valid") {
                     document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
-                    
-                    // Hide help link, input, and button
-                    document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
                     document.getElementById('verifyEmpBtn').classList.add('hidden');
-                    
                     document.getElementById('step3').classList.remove('hidden');
                 } else { alert("Invalid Employee Number!"); }
             } catch (err) { alert("Connection error."); }
@@ -114,12 +112,11 @@
         }
 
         async function uploadPhotos() {
-            // ... (keep your existing upload logic)
             const files = document.getElementById('photo').files;
             if (files.length === 0) { alert("Please select photos"); return; }
             
             const btn = document.getElementById('uploadBtn');
-            const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
+            const jobNum = document.getElementById('jobNumDisplay').innerText;
             const empNum = document.getElementById('empNum').value.padStart(3, '0');
 
             btn.disabled = true;

@@ -46,11 +46,15 @@
             <div id="empNameDisplay"></div>
         </div>
 
-        <!-- Step 3: Photo Upload -->
-        <div id="step3" class="hidden">
-            <input type="file" id="photo" accept="image/*" multiple>
-            <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
-        </div>
+<!-- Step 3: Photo Upload -->
+<div id="step3" class="hidden">
+    <!-- Removed 'capture' if it was present, and kept 'multiple' -->
+    <input type="file" id="photo" accept="image/*" multiple>
+    <p style="font-size: 0.8em; color: #666; text-align: center;">
+        Tip: Select "Choose from Library" or "Browse" to pick multiple photos.
+    </p>
+    <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
+</div>
         
         <div id="loader" class="loader">Processing...</div>
     </div>

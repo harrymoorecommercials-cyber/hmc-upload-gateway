@@ -16,13 +16,12 @@
         .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
         #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; margin-bottom: 15px; }
-        /* Help link styling */
         #help-link { margin-bottom: 15px; font-size: 0.9em; text-align: center; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>📷HMC Photo Upload</h2>
+        <h2>📷 HMC Photo Upload</h2>
         
         <!-- Step 1: Job Verification -->
         <div id="step1">
@@ -34,7 +33,6 @@
         <div id="step2" class="hidden">
             <div class="info" id="jobDetails"></div>
             
-            <!-- Help Link -->
             <div id="help-link">
                 <a href="https://harrymooregroup.sharepoint.com/:x:/s/HarryMooreCommercials64/IQBtXq35iBSYQorQee_QmawXAew1CDPy3N_vz_vDke5yBzY?e=Am7Ay8" target="_blank" rel="noopener noreferrer">
                     Don't know your employee number? Click here
@@ -46,15 +44,11 @@
             <div id="empNameDisplay"></div>
         </div>
 
-<!-- Step 3: Photo Upload -->
-<div id="step3" class="hidden">
-    <!-- Removed 'capture' if it was present, and kept 'multiple' -->
-    <input type="file" id="photo" accept="image/*" multiple>
-    <p style="font-size: 0.8em; color: #666; text-align: center;">
-        Tip: Select "Choose from Library" or "Browse" to pick multiple photos.
-    </p>
-    <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
-</div>
+        <!-- Step 3: Photo Upload -->
+        <div id="step3" class="hidden">
+            <input type="file" id="photo" accept="image/*" multiple>
+            <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
+        </div>
         
         <div id="loader" class="loader">Processing...</div>
     </div>
@@ -105,12 +99,9 @@
 
                 if (data.status === "valid") {
                     document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
-                    
-                    // Hide help link, input, and button
                     document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
                     document.getElementById('verifyEmpBtn').classList.add('hidden');
-                    
                     document.getElementById('step3').classList.remove('hidden');
                 } else { alert("Invalid Employee Number!"); }
             } catch (err) { alert("Connection error."); }
@@ -128,7 +119,7 @@
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
-            const uploadPromises = Array.from(files).map(file => {
+            const uploadPromises = Array.from(files).map((file, index) => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
@@ -142,7 +133,8 @@
                                     jobNum: jobNum,
                                     empNum: empNum,
                                     fileName: file.name, 
-                                    fileContent: reader.result.split(',')[1] 
+                                    fileContent: reader.result.split(',')[1],
+                                    isLast: (index === files.length - 1)
                                 }) 
                             });
                             resolve(response);

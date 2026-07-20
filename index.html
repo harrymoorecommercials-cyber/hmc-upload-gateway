@@ -109,18 +109,20 @@
             toggleLoader(false);
         }
 
-        async function uploadPhotos() {
+async function uploadPhotos() {
             const files = document.getElementById('photo').files;
             if (files.length === 0) { alert("Please select photos"); return; }
             
             const btn = document.getElementById('uploadBtn');
             const jobNum = document.getElementById('jobNumDisplay').innerText;
             const empNum = document.getElementById('empNum').value.padStart(3, '0');
+            
+            // Build the array of filenames here
+            const fileNames = Array.from(files).map(f => f.name);
 
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
-            // Upload files individually
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const isLast = (i === files.length - 1);
@@ -139,7 +141,9 @@
                                     empNum: empNum,
                                     fileName: file.name, 
                                     fileContent: reader.result.split(',')[1],
-                                    isLast: isLast
+                                    isLast: isLast,
+                                    // Pass the full array on every request (or just the last)
+                                    allFileNames: fileNames 
                                 }) 
                             });
                         } catch (err) { console.error("Upload error:", err); }

@@ -25,8 +25,8 @@
         <!-- Persistent Job Header -->
         <div id="jobHeader" class="info hidden">
             <strong>Job Number:</strong> <span id="jobNumDisplay"></span><br>
-            <strong>Vehicle Reg:</strong> <span id="regDisplay"></span><br>
-            <strong>Job Description:</strong> <span id="descDisplay"></span>
+            <strong>Vehicle:</strong> <span id="regDisplay"></span><br>
+            <strong>Job:</strong> <span id="descDisplay"></span>
         </div>
 
         <!-- Step 1: Job Verification -->
@@ -73,12 +73,10 @@
                 const data = await res.json();
                 
                 if (data.status === "found") {
-                    // Populate header and make it visible
                     document.getElementById('jobNumDisplay').innerText = jobNum;
                     document.getElementById('regDisplay').innerText = data.registration;
                     document.getElementById('descDisplay').innerText = data.description;
                     document.getElementById('jobHeader').classList.remove('hidden');
-                    
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.remove('hidden');
                 } else { alert("Job not found!"); }
@@ -122,13 +120,17 @@
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
-            const uploadPromises = Array.from(files).map(file => {
-                return new Promise((resolve, reject) => {
+            // Upload files individually
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const isLast = (i === files.length - 1);
+
+                await new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
                     reader.onload = async () => {
                         try {
-                            const response = await fetch(flowUrl, { 
+                            await fetch(flowUrl, { 
                                 method: "POST", 
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ 
@@ -136,24 +138,18 @@
                                     jobNum: jobNum,
                                     empNum: empNum,
                                     fileName: file.name, 
-                                    fileContent: reader.result.split(',')[1] 
+                                    fileContent: reader.result.split(',')[1],
+                                    isLast: isLast
                                 }) 
                             });
-                            resolve(response);
-                        } catch (err) { reject(err); }
+                        } catch (err) { console.error("Upload error:", err); }
+                        resolve();
                     };
                 });
-            });
-
-            try {
-                await Promise.all(uploadPromises);
-                alert("Success! Photos uploaded.");
-                location.reload();
-            } catch (err) {
-                alert("Upload failed.");
-                btn.disabled = false;
-                btn.innerText = "Upload Photos";
             }
+
+            alert("Success! All photos uploaded.");
+            location.reload();
         }
     </script>
 </body>

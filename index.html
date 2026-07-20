@@ -13,22 +13,17 @@
         button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         .hidden { display: none; }
-        .info { background: #eef6fc; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
+        .info { background: #eef6fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #005a9e; font-size: 14px; }
         .loader { display: none; margin-top: 10px; font-size: 14px; color: #666; text-align: center; }
         #empNameDisplay { margin-top: 10px; font-weight: bold; color: #005a9e; text-align: center; margin-bottom: 15px; }
+        /* Help link styling */
+        #help-link { margin-bottom: 15px; font-size: 0.9em; text-align: center; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>📷 HMC Workshop Upload</h2>
         
-        <!-- Persistent Job Header -->
-        <div id="jobHeader" class="info hidden">
-            <strong>Job Number:</strong> <span id="jobNumDisplay"></span><br>
-            <strong>Vehicle:</strong> <span id="regDisplay"></span><br>
-            <strong>Job:</strong> <span id="descDisplay"></span>
-        </div>
-
         <!-- Step 1: Job Verification -->
         <div id="step1">
             <input type="text" id="jobNum" placeholder="Enter Job Number: (e.g. AC123456)">
@@ -37,6 +32,15 @@
 
         <!-- Step 2: Employee Verification -->
         <div id="step2" class="hidden">
+            <div class="info" id="jobDetails"></div>
+            
+            <!-- Help Link -->
+            <div id="help-link">
+                <a href="https://harrymooregroup.sharepoint.com/:x:/s/HarryMooreCommercials64/IQBtXq35iBSYQorQee_QmawXAew1CDPy3N_vz_vDke5yBzY?e=G3LqFg" target="_blank" rel="noopener noreferrer">
+                    Don't know your employee number? Click here
+                </a>
+            </div>
+
             <input type="text" id="empNum" placeholder="Employee Number (e.g. 000)">
             <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
             <div id="empNameDisplay"></div>
@@ -59,8 +63,7 @@
         }
 
         async function verifyJob() {
-            const rawJobNum = document.getElementById('jobNum').value;
-            const jobNum = rawJobNum.toUpperCase().replace(/\s/g, '');
+            const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
             if (!jobNum) { alert("Please enter a job number"); return; }
 
             toggleLoader(true);
@@ -73,10 +76,7 @@
                 const data = await res.json();
                 
                 if (data.status === "found") {
-                    document.getElementById('jobNumDisplay').innerText = jobNum;
-                    document.getElementById('regDisplay').innerText = data.registration;
-                    document.getElementById('descDisplay').innerText = data.description;
-                    document.getElementById('jobHeader').classList.remove('hidden');
+                    document.getElementById('jobDetails').innerHTML = `<strong>Vehicle:</strong> ${data.registration}<br><strong>Job:</strong> ${data.description}`;
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.remove('hidden');
                 } else { alert("Job not found!"); }
@@ -101,38 +101,36 @@
 
                 if (data.status === "valid") {
                     document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
+                    
+                    // Hide help link, input, and button
+                    document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
                     document.getElementById('verifyEmpBtn').classList.add('hidden');
+                    
                     document.getElementById('step3').classList.remove('hidden');
                 } else { alert("Invalid Employee Number!"); }
             } catch (err) { alert("Connection error."); }
             toggleLoader(false);
         }
 
-async function uploadPhotos() {
+        async function uploadPhotos() {
             const files = document.getElementById('photo').files;
             if (files.length === 0) { alert("Please select photos"); return; }
             
             const btn = document.getElementById('uploadBtn');
-            const jobNum = document.getElementById('jobNumDisplay').innerText;
+            const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
             const empNum = document.getElementById('empNum').value.padStart(3, '0');
-            
-            // Build the array of filenames here
-            const fileNames = Array.from(files).map(f => f.name);
 
             btn.disabled = true;
             btn.innerText = "Uploading...";
             
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const isLast = (i === files.length - 1);
-
-                await new Promise((resolve) => {
+            const uploadPromises = Array.from(files).map(file => {
+                return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
                     reader.onload = async () => {
                         try {
-                            await fetch(flowUrl, { 
+                            const response = await fetch(flowUrl, { 
                                 method: "POST", 
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ 
@@ -140,20 +138,24 @@ async function uploadPhotos() {
                                     jobNum: jobNum,
                                     empNum: empNum,
                                     fileName: file.name, 
-                                    fileContent: reader.result.split(',')[1],
-                                    isLast: isLast,
-                                    // Pass the full array on every request (or just the last)
-                                    allFileNames: fileNames 
+                                    fileContent: reader.result.split(',')[1] 
                                 }) 
                             });
-                        } catch (err) { console.error("Upload error:", err); }
-                        resolve();
+                            resolve(response);
+                        } catch (err) { reject(err); }
                     };
                 });
-            }
+            });
 
-            alert("Success! All photos uploaded.");
-            location.reload();
+            try {
+                await Promise.all(uploadPromises);
+                alert("Success! Photos uploaded.");
+                location.reload();
+            } catch (err) {
+                alert("Upload failed.");
+                btn.disabled = false;
+                btn.innerText = "Upload Photos";
+            }
         }
     </script>
 </body>

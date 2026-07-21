@@ -29,7 +29,7 @@
             <button id="verifyJobBtn" onclick="verifyJob()">Verify Job</button>
         </div>
 
-        <!-- Step 2: Employee Verification -->
+        <!-- Step 2: Employee & PIN Verification -->
         <div id="step2" class="hidden">
             <div class="info" id="jobDetails"></div>
             
@@ -40,6 +40,8 @@
             </div>
 
             <input type="text" id="empNum" placeholder="Employee Number (e.g. 000)">
+            <!-- Added PIN Input Field -->
+            <input type="password" id="empPin" placeholder="Enter PIN" maxlength="6">
             <button id="verifyEmpBtn" onclick="verifyEmployee()">Confirm Employee</button>
             <div id="empNameDisplay"></div>
         </div>
@@ -85,15 +87,20 @@
         async function verifyEmployee() {
             const rawEmpNum = document.getElementById('empNum').value;
             const empNum = rawEmpNum.padStart(3, '0');
+            const empPin = document.getElementById('empPin').value;
             
-            if (!rawEmpNum) { alert("Please enter employee number"); return; }
+            if (!rawEmpNum || !empPin) { alert("Please enter both Employee Number and PIN"); return; }
 
             toggleLoader(true);
             try {
                 const res = await fetch(flowUrl, { 
                     method: "POST", 
                     headers: {"Content-Type":"application/json"}, 
-                    body: JSON.stringify({action: "empverify", empNum: empNum}) 
+                    body: JSON.stringify({
+                        action: "empverify", 
+                        empNum: empNum,
+                        empPin: empPin // Passing PIN to flow
+                    }) 
                 });
                 const data = await res.json();
 
@@ -101,9 +108,10 @@
                     document.getElementById('empNameDisplay').innerText = "Welcome, " + data.employeeName;
                     document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
+                    document.getElementById('empPin').classList.add('hidden'); // Hide PIN input
                     document.getElementById('verifyEmpBtn').classList.add('hidden');
                     document.getElementById('step3').classList.remove('hidden');
-                } else { alert("Invalid Employee Number!"); }
+                } else { alert("Invalid Employee Number or PIN!"); }
             } catch (err) { alert("Connection error."); }
             toggleLoader(false);
         }

@@ -138,7 +138,6 @@
             text-align: center; 
         }
 
-        /* Spinner animation */
         .spinner {
             width: 24px;
             height: 24px;
@@ -177,7 +176,6 @@
             text-decoration: underline;
         }
 
-        /* File input styling */
         input[type="file"] {
             padding: 10px;
             background: #f8f9fa;
@@ -282,12 +280,12 @@
                 const data = await res.json();
 
                 if (data.status === "valid") {
-                    document.getElementById('empNameDisplay').innerText = "✓ Welcome, " + data.employeeName;
+                    // Fixed mapping to look for employeeName from the Power Automate response
+                    document.getElementById('empNameDisplay').innerText = "✓ Welcome, " + (data.employeeName || data.name || "");
                     document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
                     document.getElementById('empPin').classList.add('hidden');
                     document.getElementById('verifyEmpBtn').classList.add('hidden');
-                    // Hide labels for cleaner UI view
                     document.querySelectorAll('label[for="empNum"], label[for="empPin"]').forEach(l => l.style.display = 'none');
                     document.getElementById('step3').classList.remove('hidden');
                 } else { alert("Invalid Employee Number or PIN!"); }

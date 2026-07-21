@@ -280,7 +280,8 @@
                 const data = await res.json();
 
                 if (data.status === "valid") {
-                    document.getElementById('empNameDisplay').innerText = "✓ Welcome, " + (data.employeeName || data.name || "");
+                 const empName = data.employeeName || data.name || data.FullName || data.empName || "Employee";
+                    document.getElementById('empNameDisplay').innerText = "✓ Welcome, " + empName;
                     document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
                     document.getElementById('empPin').classList.add('hidden');

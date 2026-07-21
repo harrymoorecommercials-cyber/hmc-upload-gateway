@@ -215,11 +215,11 @@
             <div id="empNameDisplay"></div>
         </div>
 
-        <!-- Step 3: Photo Upload -->
+        <!-- Step 3: Photo & Video Upload -->
         <div id="step3" class="step-container hidden">
-            <label for="photo">Select Photos</label>
-            <input type="file" id="photo" accept="image/*" multiple>
-            <button id="uploadBtn" onclick="uploadPhotos()">Upload Photos</button>
+            <label for="photo">Select Files (Photos & Videos)</label>
+            <input type="file" id="photo" accept="image/*,video/*" multiple>
+            <button id="uploadBtn" onclick="uploadPhotos()">Upload Files</button>
         </div>
         
         <div id="loader" class="loader">
@@ -280,7 +280,6 @@
                 const data = await res.json();
 
                 if (data.status === "valid") {
-                    // Fixed mapping to look for employeeName from the Power Automate response
                     document.getElementById('empNameDisplay').innerText = "✓ Welcome, " + (data.employeeName || data.name || "");
                     document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
@@ -295,7 +294,7 @@
 
         async function uploadPhotos() {
             const files = document.getElementById('photo').files;
-            if (files.length === 0) { alert("Please select photos"); return; }
+            if (files.length === 0) { alert("Please select files"); return; }
             
             const btn = document.getElementById('uploadBtn');
             const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
@@ -303,7 +302,7 @@
             const allFileNames = Array.from(files).map(file => file.name);
 
             btn.disabled = true;
-            btn.innerText = "Uploading Photos...";
+            btn.innerText = "Uploading Files...";
             toggleLoader(true, `Uploading ${files.length} file(s)...`);
             
             const uploadPromises = Array.from(files).map((file) => {
@@ -346,13 +345,13 @@
                 });
 
                 toggleLoader(false);
-                alert("Success! All photos uploaded.");
+                alert("Success! All files uploaded.");
                 location.reload();
             } catch (err) {
                 toggleLoader(false);
                 alert("Upload failed.");
                 btn.disabled = false;
-                btn.innerText = "Upload Photos";
+                btn.innerText = "Upload Files";
             }
         }
     </script>

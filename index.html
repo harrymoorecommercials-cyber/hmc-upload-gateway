@@ -292,8 +292,8 @@ async function uploadPhotos() {
             const files = document.getElementById('photo').files;
             if (files.length === 0) { alert("Please select files"); return; }
             
-            // Limit check: 50MB max per file (50 * 1024 * 1024 bytes)
-            const maxSize = 50 * 1024 * 1024; 
+            // Limit check: 75MB max per file (50 * 1024 * 1024 bytes)
+            const maxSize = 75 * 1024 * 1024; 
             for (let file of files) {
                 if (file.size > maxSize) {
                     alert(`File "${file.name}" is too large. Please keep videos under 50MB.`);

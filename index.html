@@ -215,13 +215,22 @@
             <div id="empNameDisplay"></div>
         </div>
 
-<!-- Step 3: Photo & Video Upload -->
+        <!-- Step 3: Separate Photo and Video Inputs -->
         <div id="step3" class="step-container hidden">
-            <label for="photo">Select Files (Photos & Videos)</label>
-            <!-- Expanded accept attribute to explicitly list common video formats -->
-           <input type="file" id="photo" multiple>
-            <button id="uploadBtn" onclick="uploadPhotos()">Upload Files</button>
+            <label for="photos">Select Photos</label>
+            <input type="file" id="photos" accept="image/*" multiple>
+
+            <label for="videos">Select Videos (Max 50MB)</label>
+            <input type="file" id="videos" accept="video/*" multiple>
+
+            <button id="uploadBtn" onclick="uploadFiles()">Upload All Files</button>
         </div>
+        
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <span id="loaderText">Processing...</span>
+        </div>
+    </div>
 
     <script>
         const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0";
@@ -275,7 +284,7 @@
                 const data = await res.json();
 
                 if (data.status === "valid") {
-                 const empName = data.employeeName || data.name || data.FullName || data.empName || "Employee";
+                    const empName = data.employeeName || data.name || data.FullName || data.empName || "Employee";
                     document.getElementById('empNameDisplay').innerText = "✓ Welcome, " + empName;
                     document.getElementById('help-link').style.display = 'none';
                     document.getElementById('empNum').classList.add('hidden');
@@ -288,29 +297,37 @@
             toggleLoader(false);
         }
 
-async function uploadPhotos() {
-            const files = document.getElementById('photo').files;
-            if (files.length === 0) { alert("Please select files"); return; }
+        async function uploadFiles() {
+            const photoFiles = document.getElementById('photos').files;
+            const videoFiles = document.getElementById('videos').files;
             
-            // Limit check: 75MB max per file (50 * 1024 * 1024 bytes)
-            const maxSize = 75 * 1024 * 1024; 
-            for (let file of files) {
+            // Combine both file lists into a single array to process together
+            const allFiles = [...Array.from(photoFiles), ...Array.from(videoFiles)];
+
+            if (allFiles.length === 0) { 
+                alert("Please select at least one photo or video."); 
+                return; 
+            }
+            
+            // Enforce a strict 50MB file size limit for videos/large files
+            const maxSize = 50 * 1024 * 1024; 
+            for (let file of allFiles) {
                 if (file.size > maxSize) {
-                    alert(`File "${file.name}" is too large. Please keep videos under 50MB.`);
-                    return; // Stops the upload process immediately
+                    alert(`File "${file.name}" exceeds the 50MB limit.`);
+                    return;
                 }
             }
             
             const btn = document.getElementById('uploadBtn');
             const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
             const empNum = document.getElementById('empNum').value.padStart(3, '0');
-            const allFileNames = Array.from(files).map(file => file.name);
+            const allFileNames = allFiles.map(file => file.name);
 
             btn.disabled = true;
             btn.innerText = "Uploading Files...";
-            toggleLoader(true, `Uploading ${files.length} file(s)...`);
+            toggleLoader(true, `Uploading ${allFiles.length} file(s)... (Videos may take a moment)`);
             
-            const uploadPromises = Array.from(files).map((file) => {
+            const uploadPromises = allFiles.map((file) => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
@@ -354,9 +371,9 @@ async function uploadPhotos() {
                 location.reload();
             } catch (err) {
                 toggleLoader(false);
-                alert("Upload failed.");
+                alert("Upload failed. Check file sizes or connection.");
                 btn.disabled = false;
-                btn.innerText = "Upload Files";
+                btn.innerText = "Upload All Files";
             }
         }
     </script>

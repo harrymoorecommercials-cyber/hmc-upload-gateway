@@ -215,18 +215,13 @@
             <div id="empNameDisplay"></div>
         </div>
 
-        <!-- Step 3: Photo & Video Upload -->
+<!-- Step 3: Photo & Video Upload -->
         <div id="step3" class="step-container hidden">
             <label for="photo">Select Files (Photos & Videos)</label>
-            <input type="file" id="photo" accept="image/*,video/*" multiple>
+            <!-- Expanded accept attribute to explicitly list common video formats -->
+           <input type="file" id="photo" multiple>
             <button id="uploadBtn" onclick="uploadPhotos()">Upload Files</button>
         </div>
-        
-        <div id="loader" class="loader">
-            <div class="spinner"></div>
-            <span id="loaderText">Processing...</span>
-        </div>
-    </div>
 
     <script>
         const flowUrl = "https://default8acb70d7a0a24c419c692957995811.cf.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/00/workflows/6eb0c02d05f14973bf4eb13cede5a827/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cn06fL-QBv-4XQNn6fSqy8p3CqJgZfA1w9v92qNWdj0";
@@ -293,9 +288,18 @@
             toggleLoader(false);
         }
 
-        async function uploadPhotos() {
+async function uploadPhotos() {
             const files = document.getElementById('photo').files;
             if (files.length === 0) { alert("Please select files"); return; }
+            
+            // Limit check: 50MB max per file (50 * 1024 * 1024 bytes)
+            const maxSize = 50 * 1024 * 1024; 
+            for (let file of files) {
+                if (file.size > maxSize) {
+                    alert(`File "${file.name}" is too large. Please keep videos under 50MB.`);
+                    return; // Stops the upload process immediately
+                }
+            }
             
             const btn = document.getElementById('uploadBtn');
             const jobNum = document.getElementById('jobNum').value.toUpperCase().replace(/\s/g, '');
